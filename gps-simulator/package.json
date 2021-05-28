@@ -1,0 +1,16 @@
+{
+  "name": "gps-sim",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gps-simulator": "^1.1.1",
+    "mqtt": "^4.2.6"
+  }
+}

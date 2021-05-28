@@ -1,0 +1,87 @@
+<html>
+<head>
+    <title>Leaflet Realtime</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <style>
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js" integrity="sha512-Y5n0fbohPllOQ21fTwM/h9sQQ/1a1h5KhweGhu2zwD8lAoJnTgVa7NIrFa1bRDIMQHixtyuRV2ubIx+qWbGdDA==" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet-src.js"></script>
+
+    <script>
+      var map = L.map('map', {
+          center: this.center,
+          zoom: 17,
+      });
+
+      var greenIcon = new L.Icon({
+          iconUrl: 'https://www.pngix.com/pngfile/big/374-3746809_vehicle-tracker-google-map-marker-car-hd-png.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+      });
+
+      var marker = L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          maxZoom: 20,
+      }).addTo(map);
+
+      var MQTTbroker = 'localhost';
+      var MQTTport = 1884;
+      var MQTTsubTopic = 'edgex/gps';
+
+      //mqtt broker
+      var client = new Paho.Client(MQTTbroker, MQTTport,
+            "myclientid_" + parseInt(Math.random() * 100, 10));
+      client.onMessageArrived = onMessageArrived;
+      client.onConnectionLost = onConnectionLost;
+
+      //mqtt connecton options including the mqtt broker subscriptions
+      var options = {
+        timeout: 3,
+        onSuccess: function () {
+          console.log("mqtt connected");
+          //client.publish(MQTTsubTopic, "", 0, true);
+          // Connection succeeded; subscribe to our topics
+          client.subscribe(MQTTsubTopic, {qos: 0});
+        },
+        onFailure: function (message) {
+          console.log("Connection failed, ERROR: " + message.errorMessage);
+        }
+      };
+
+      //can be used to reconnect on connection lost
+      function onConnectionLost(responseObject) {
+        console.log("connection lost: " + responseObject.errorMessage);
+      };
+
+      //what is done when a message arrives from the broker
+      function onMessageArrived(message) {
+        //console.log(MQTTsubTopic, message.payloadString);
+        var jobj = JSON.parse(message.payloadString);
+
+        console.log(jobj)
+        //marker.setLatLng(new L.LatLng(jobj.latitude, jobj.longitude)).update();
+        marker.setLatLng(jobj.Location).update();
+        map.panTo(new L.LatLng(jobj.latitude, jobj.longitude));
+      };
+
+      // Connect to MQTT broker
+      client.connect(options);
+    </script>
+
+</body>
+</html>
