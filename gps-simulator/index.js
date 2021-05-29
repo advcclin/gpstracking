@@ -19,6 +19,7 @@ gpsSimulator.start(function(position, beStopped, movableObject, currentRouteInde
 	var gps_sensor = {
 		"deviceId" : busId,
 		"violationPoint": "",
+		"speed": (movableObject.velocity * 3.6).toFixed(2) + ' km/h',
 		"Time" : new Date(),
 		"Location" : [position.latitude, position.longitude],
 		"latitude" : position.latitude,

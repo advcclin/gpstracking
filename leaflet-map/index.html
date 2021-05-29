@@ -1,7 +1,10 @@
 <html>
 <head>
     <title>Leaflet Realtime</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.css"
+    />
     <style>
         #map {
             position: absolute;
@@ -11,13 +14,16 @@
             right: 0;
         }
     </style>
+
 </head>
 <body>
     <div id="map"></div>
 
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+</body>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js" integrity="sha512-Y5n0fbohPllOQ21fTwM/h9sQQ/1a1h5KhweGhu2zwD8lAoJnTgVa7NIrFa1bRDIMQHixtyuRV2ubIx+qWbGdDA==" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet-src.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.js"></script>
+    <script src='https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js'></script>
 
     <script>
       var map = L.map('map', {
@@ -33,15 +39,30 @@
       });
 
       var marker = L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
+      marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
           maxZoom: 20,
       }).addTo(map);
 
+      var realRouteLine = L.polyline([], {
+        weight: 5,
+        color: '#0099FF'
+        //color: '#FF9900'
+      }).addTo(map);
+
+      var newLatlngs = []
+
+      function updateLine(latlng) {
+        newLatlngs.push(latlng)
+        realRouteLine.setLatLngs(newLatlngs)
+      }
+
       var MQTTbroker = 'localhost';
       var MQTTport = 1884;
       var MQTTsubTopic = 'edgex/gps';
+      var init = true
 
       //mqtt broker
       var client = new Paho.Client(MQTTbroker, MQTTport,
@@ -75,13 +96,24 @@
 
         console.log(jobj)
         //marker.setLatLng(new L.LatLng(jobj.latitude, jobj.longitude)).update();
-        marker.setLatLng(jobj.Location).update();
-        map.panTo(new L.LatLng(jobj.latitude, jobj.longitude));
+        if(init == true) {
+          marker.setLatLng(jobj.Location).update();
+          init = false
+        }
+	marker.slideTo(jobj.Location, {
+                duration: 1000,
+                keepAtCenter: true
+              });      
+        //map.panTo(new L.LatLng(jobj.latitude, jobj.longitude));
+        map.panTo(jobj.Location);
+        updateLine(jobj.Location)
+        marker.getPopup().setContent("<b>"+jobj.deviceId+"</b></br>" +jobj.speed);
+        marker.getPopup().update();
       };
 
       // Connect to MQTT broker
       client.connect(options);
     </script>
 
-</body>
+
 </html>
